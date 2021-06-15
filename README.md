@@ -63,7 +63,7 @@ cargo espflash --chip esp32 --speed 460800 --features="xtensa-lx-rt/lx6,xtensa-l
 ### Tips
 To build and flash the target more easily, add the aliases at the end of `setup.sh`
 ```bash
-alias esp32_build='cargo xbuild --features="xtensa-lx-rt/lx6,xtensa-lx/lx6" --target="xtensa-esp32-none-elf'
+alias esp32_build='cargo xbuild --features="xtensa-lx-rt/lx6,xtensa-lx/lx6" --target="xtensa-esp32-none-elf"
 alias esp32_flash='cargo espflash --chip esp32 --speed 460800 --features="xtensa-lx-rt/lx6,xtensa-lx/lx6" /dev/ttyUSB0'
 ```
 
