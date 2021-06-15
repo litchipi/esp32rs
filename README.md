@@ -74,3 +74,22 @@ export PS1="$PS1\033[95mESP32>\033[0m "
 	export CROSSCOMPILE_SET=1
 fi
 ```
+
+## Examples
+In order to easily test a lot of different programs inside the same code, the file `main.rs` hosts everything statically defined (like the CPU freq for exemple).
+In it, a `trait Algo` is defined, with a `init` function (initialize algorithm) and a `loop_fct` function (called over and over again), Arduino-style.
+An algorithm is imported as a struct implementing the `trait Algo`, imported as a mod inside `main.rs` and called.
+
+### Blinky
+Simply blinks a LED
+
+## TODO
+### Blinky
+- Validate that we get a second when delaying of CORE_HZ
+- Simplify LED pin pick process
+
+### Other projects
+- Oled display experimentation
+- Wifi experimentation
+- BLE experimentation
+- LoRa experimentation
