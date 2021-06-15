@@ -1,6 +1,12 @@
+# ESP32rs
+Simple project to use Rust to program the Lora32 board from Heltec, got from [Hackerbox #0066](https://hackerboxes.com/products/hackerbox-0066-radio-star)
+
+Uses extensively already made projects (thanks to esp-rs / MabezDev) and made to play.
+
+## How to use
 ### Setup
 Build Rust for xtensa support:
-```
+```bash
 git clone https://github.com/MabezDev/rust-xtensa
 ./configure --experimental-targets=Xtensa
 ./x.py build --stage 2
@@ -8,15 +14,15 @@ git clone https://github.com/MabezDev/rust-xtensa
 Note:	Will take a LOT of time
 Note:	I recomment to turn off ninja in config.toml `ninja = false`
 
-#### Download the toolchain from Espressif ((Link)[https://github.com/espressif/crosstool-NG/releases])
+#### Download the toolchain from Espressif ([Link](https://github.com/espressif/crosstool-NG/releases))
 WARNING:	Take the esp32 one, not esp32s3 one
-```
+```bash
 mkdir ./esp32_toolchain/
 tar -xzf ~/Downloads/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz -C ./esp32_toolchain/
 ```
 
 #### Install tools for building / flashing
-```
+```bash
 cargo install cargo-xbuild
 cargo install cargo-espflash
 ```
@@ -24,7 +30,7 @@ cargo install cargo-espflash
 #### Setup bash env to cross compile.
 Add this to a file `setup.sh` (or the name you want)
 
-```
+```bash
 CUSTOM_RUST_BUILD=/path/to/rust-xtensa
 
 export RUST_BACKTRACE=1
@@ -39,30 +45,30 @@ export PATH="$PATH:/path/to/esp32_toolchain/xtensa-esp32-elf/bin"
 ### Build
 
 Setup cross compilation environment if not done already
-```
+```bash
 source setup.sh
 ```
 
 Then build the binary for the target:
-```
+```bash
 cargo xbuild --features="xtensa-lx-rt/lx6,xtensa-lx/lx6" --target="xtensa-esp32-none-elf"
 ```
 
 ### Flash the board
 Flash the ESP32 using the binary
-```
+```bash
 cargo espflash --chip esp32 --speed 460800 --features="xtensa-lx-rt/lx6,xtensa-lx/lx6" /dev/ttyUSB0
 ```
 
 ### Tips
 To build and flash the target more easily, add the aliases at the end of `setup.sh`
-```
+```bash
 alias esp32_build='cargo xbuild --features="xtensa-lx-rt/lx6,xtensa-lx/lx6" --target="xtensa-esp32-none-elf'
 alias esp32_flash='cargo espflash --chip esp32 --speed 460800 --features="xtensa-lx-rt/lx6,xtensa-lx/lx6" /dev/ttyUSB0'
 ```
 
 To know if your environment is set up for cross compile, add to `setup.sh`
-```
+```bash
 if [ -z ${CROSSCOMPILE_SET+x} ]; then
 	export PS1="$PS1\033[95mESP32>\033[0m "
 	export CROSSCOMPILE_SET=1
