@@ -1,22 +1,26 @@
 #![no_std]
 #![no_main]
 
-use esp32_hal::target;
 use hal::prelude::*;
-use xtensa_lx::timer::delay;
-//use panic_halt as _;
+use panic_halt as _;
 use esp32_hal as hal;
 
-use core::panic::PanicInfo;
+pub const CORE_HZ: u32 = 40_000_000;
 
-/// Entry point - called by xtensa_lx6_rt after initialisation
-#[no_mangle]
-fn main() -> ! {
-    loop {}
+pub trait Algo{
+    fn init() -> Self where Self: Sized;
+    fn loop_fct(&mut self);
 }
 
-/// Simple panic handler
-#[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
+mod blinky;
+use crate::blinky::BlinkyAlgo;
+
+
+/// Entry point - called by xtensa_lx6_rt after initialisation
+#[entry]
+fn main() -> ! {
+    let mut algo = BlinkyAlgo::init();
+    loop {
+        algo.loop_fct();
+    }
 }

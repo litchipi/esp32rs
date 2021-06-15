@@ -3,7 +3,7 @@ name = "esp32rs"
 version = "0.1.0"
 authors = ["litchipi <litchi.pi@protonmail.com>"]
 edition = "2018"
-required-features = ["xtensa-lx-rt/lx6", "xtensa-lx/lx6", "esp32-hal"]
+#required-features = ["xtensa-lx-rt/lx6", "xtensa-lx/lx6"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,3 +13,6 @@ xtensa-lx = "0.3.0"
 panic-halt = "0.2.0"
 
 esp32-hal = "0.2.0"
+
+paste = "1.0.5"
+#mini_paste = "0.1.11"

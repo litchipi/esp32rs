@@ -70,7 +70,7 @@ alias esp32_flash='cargo espflash --chip esp32 --speed 460800 --features="xtensa
 To know if your environment is set up for cross compile, add to `setup.sh`
 ```bash
 if [ -z ${CROSSCOMPILE_SET+x} ]; then
-	export PS1="$PS1\033[95mESP32>\033[0m "
+export PS1="$PS1\033[95mESP32>\033[0m "
 	export CROSSCOMPILE_SET=1
 fi
 ```
