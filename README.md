@@ -92,6 +92,12 @@ An algorithm is imported as a struct implementing the `trait Algo`, imported as 
 Simply blinks a LED
 
 ## TODO
+### General
+- Select program to launch based on Cargo.toml configuration
+- Create a UART communication to display messages
+	- Optionnally from Cargo.toml
+	- On debug build only ?
+
 ### Blinky
 - Validate that we get a second when delaying of CORE_HZ
 - Simplify LED pin pick process
