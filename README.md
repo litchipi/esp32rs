@@ -67,6 +67,14 @@ alias esp32_build='cargo xbuild --features="xtensa-lx-rt/lx6,xtensa-lx/lx6" --ta
 alias esp32_flash='cargo espflash --chip esp32 --speed 460800 --features="xtensa-lx-rt/lx6,xtensa-lx/lx6" /dev/ttyUSB0'
 ```
 
+To reduce the size of the output binary, strip the binary from un-necessary data:
+```bash
+alias esp32_strip='esp32_toolchain/xtensa-esp32-elf/bin/xtensa-esp32-elf-strip'
+```
+
+The command `esp32_strip target/xtensa-esp32-none-elf/release/esp32rs` resulted in the reduction of
+the binary size from `493k` to `43k` on the blinky example.
+
 To know if your environment is set up for cross compile, add to `setup.sh`
 ```bash
 if [ -z ${CROSSCOMPILE_SET+x} ]; then
