@@ -1,10 +1,29 @@
+/*
+Next step: Draw an image
+
+use embedded_graphics::{
+    pixelcolor::BinaryColor,
+    prelude::*,
+};
+
+//TODO	OLed simple: Find a way to convert .png images to .raw at compile time
+//TODO	Pass path to data in configuration of Cargo.toml
+const raw: ImageRaw<BinaryColor> = ImageRaw::new(include_bytes!("../data/images/rust.raw"), 64);
+const img: Image<'static, ImageRaw<BinaryColor>> = Image::new(&raw, Point::new(32, 0));
+img.draw(&mut display).unwrap();
+display.flush().unwrap();
+
+*/
+
 use embedded_graphics::{
     fonts::{Font8x16, Text},
     pixelcolor::BinaryColor,
     prelude::*,
     style::TextStyle,
 };
-use embedded_hal::blocking::i2c::{Write, WriteRead};
+
+use embedded_hal::blocking::i2c::{Write as I2CWrite, WriteRead};
+
 use esp32_hal::{
     clock_control::{self, sleep, CPUSource, ClockControl},
     dport::Split,
@@ -12,13 +31,67 @@ use esp32_hal::{
     prelude::*,
     target::{I2C0, Peripherals},
     timer::Timer,
+    gpio::*,
 };
+
 use ssd1306::{prelude::*, Builder};
 use xtensa_lx::mutex::SpinLockMutex;
 
+use heapless::String;
+use ufmt::uwrite;
+
 use crate::Algo;
 
-pub struct OledSimpleAlgo;
+
+
+
+type OledDisplay = ssd1306::mode::GraphicsMode<I2cInterface<I2CWrapper>>;
+type OledResetPin = Gpio16<Output<PushPull>>;
+type I2cController = I2C<I2C0>;
+
+const TEXT_LINE_SIZE: usize = 15;
+
+
+
+
+pub struct DisplayDriver {
+    display: OledDisplay,
+    //rst_pin: OledResetPin,
+}
+
+impl DisplayDriver{
+    pub fn new(mut rst_pin: OledResetPin, i2c_handler: I2CWrapper) -> DisplayDriver {
+        DisplayDriver {
+            display: {
+                let mut display: GraphicsMode<_> = Builder::new().connect_i2c(i2c_handler).into();
+                rst_pin.set_low().unwrap();
+                sleep(10.ms());
+                rst_pin.set_high().unwrap();
+                display.init().unwrap();
+                display.clear();
+                display.flush().unwrap();
+                display
+            },
+      //      rst_pin
+        }
+    }
+
+    pub fn draw_text(&mut self, text: String<TEXT_LINE_SIZE>, x: i32, y: i32) {
+        Text::new(text.as_str(), Point::new(x, y))
+            .into_styled(TextStyle::new(Font8x16, BinaryColor::On))
+            .draw(&mut self.display)
+            .unwrap();
+        self.display.flush().unwrap();
+    }
+}
+
+
+
+
+pub struct OledSimpleAlgo{
+    i: usize,
+    display: DisplayDriver,
+}
 
 impl Algo for OledSimpleAlgo{
     fn init() -> Self where Self: Sized{
@@ -32,20 +105,17 @@ impl Algo for OledSimpleAlgo{
             dp.APB_CTRL,
             dport_clock_control,
             clock_control::XTAL_FREQUENCY_AUTO,
-        )
-        .unwrap();
+        ).unwrap();
 
         // set desired clock frequencies
-        clkcntrl
-            .set_cpu_frequencies(
+        clkcntrl.set_cpu_frequencies(
                 CPUSource::PLL,
                 80.MHz(),
                 CPUSource::PLL,
                 240.MHz(),
                 CPUSource::PLL,
                 80.MHz(),
-            )
-            .unwrap();
+            ).unwrap();
 
         // disable RTC watchdog
         let (clkcntrl_config, mut watchdog) = clkcntrl.freeze().unwrap();
@@ -67,171 +137,51 @@ impl Algo for OledSimpleAlgo{
             400_000,
             &mut dport,
         );
-        let i2c0 = SpinLockMutex::new(i2c0);
+        let i2cw = I2CWrapper::new(i2c0);
 
-        // Display
-        let mut display = {
-            let i2c_wrapper = I2CWrapper::new(&i2c0);
-            let mut display: GraphicsMode<_> = Builder::new().connect_i2c(i2c_wrapper).into();
-
-            let mut rst = pins.gpio16.into_push_pull_output();
-            rst.set_low().unwrap();
-            sleep(10.ms());
-            rst.set_high().unwrap();
-
-            display.init().unwrap();
-            display.clear();
-            display.flush().unwrap();
-
-            display
-        };
-        
-        Text::new("Hello world!", Point::new(2, 28))
-            .into_styled(TextStyle::new(Font8x16, BinaryColor::On))
-            .draw(&mut display)
-            .unwrap();
-        display.flush().unwrap();
-        OledSimpleAlgo { }
-    }
-
-    fn loop_fct(&mut self) {
-        sleep(1.s());
-    }
-}
-
-struct I2CWrapper<'a> {
-    i2c: &'a SpinLockMutex<I2C<I2C0>>,
-}
-
-impl<'a> I2CWrapper<'a> {
-    fn new(i2c: &'a SpinLockMutex<I2C<I2C0>>) -> Self {
-        Self { i2c }
-    }
-}
-
-impl<'a> Write for I2CWrapper<'a> {
-    type Error = Error;
-
-    fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
-        self.i2c.lock(|x| x.write(addr, bytes))
-    }
-}
-
-impl<'a> WriteRead for I2CWrapper<'a> {
-    type Error = Error;
-
-    fn write_read(&mut self, address: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
-        self.i2c.lock(|x| x.write_read(address, bytes, buffer))
-    }
-}
-/*
-use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, MonoTextStyle},
-    pixelcolor::Rgb565,
-    text::Text,
-    pixelcolor::BinaryColor,
-    prelude::*,
-};
-use embedded_hal::blocking::i2c::{Write, WriteRead};
-use esp32_hal::{
-    clock_control::{self, sleep, CPUSource, ClockControl},
-    delay::Delay,
-    dport::Split,
-    dprintln,
-    prelude::*,
-    target::{I2C0, Peripherals},
-    timer::Timer,
-    i2c::{self, Error, I2C},
-};
-use ssd1306::{prelude::*, Builder, I2CDIBuilder, Ssd1306};
-use xtensa_lx::mutex::SpinLockMutex;
-use embedded_graphics::draw_target::DrawTarget;
-use crate::{CORE_HZ, Algo};
-
-/*
-//TODO	OLed simple: Find a way to convert .png images to .raw at compile time
-//TODO	Pass path to data in configuration of Cargo.toml
-const raw: ImageRaw<BinaryColor> = ImageRaw::new(include_bytes!("../data/images/rust.raw"), 64);
-const img: Image<'static, ImageRaw<BinaryColor>> = Image::new(&raw, Point::new(32, 0));
-*/
-
-pub struct OledSimpleAlgo;
-
-impl Algo for OledSimpleAlgo{
-    fn init() -> Self where Self: Sized{
-        let dp = Peripherals::take().unwrap();
-        let pins = dp.GPIO.split();
-        let i2c0 = i2c::I2C::new(
-            dp.I2C0,
-            i2c::Pins {
-                sda: pins.gpio4,
-                scl: pins.gpio15,
-            },
-            400_000,
-            &mut dport,
-        );
-        //let i2c0 = SpinLockMutex::new(i2c0);
-        let mut display = {
-            //let i2c_wrapper = I2CWrapper::new(&i2c0);
-            //let mut display: GraphicsMode<_, _> = Builder::new().connect(interface).into();
-            let interface = I2CDIBuilder::new().init(i2c0);
-            let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
-                .into_buffered_graphics_mode();
-
-            let mut rst = pins.gpio16.into_push_pull_output();
-            rst.set_low().unwrap();
-            sleep(10.ms());
-            rst.set_high().unwrap();
-
-            display.init().unwrap();
-            display.clear();
-            display.flush().unwrap();
-
-            display
-        };
-
-        let style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
-        Text::new("Hello Rust!", Point::new(20, 30), style).draw(&mut display).unwrap();
-        display.flush().unwrap();
-
-        sleep(3.s());
-
-        //img.draw(&mut display).unwrap();
-        //display.flush().unwrap();
-
-        OledSimpleAlgo { 
+        OledSimpleAlgo{
+            display : DisplayDriver::new(pins.gpio16.into_push_pull_output(), i2cw),
+            i: 0,
         }
     }
 
-    fn loop_fct(&mut self){
+    fn loop_fct(&mut self) {
+        if self.i > 9999 {
+            panic!("too large number");
+        }
+
+        let mut text: String<TEXT_LINE_SIZE> = String::new();
+        uwrite!(text, "Hello rust {}", self.i).unwrap();
+        self.display.draw_text(text, 2, 28);
+        self.i += 1;
         sleep(1.s());
+        self.display.display.clear()
     }
 }
 
-
-struct I2CWrapper<'a> {
-    i2c: &'a SpinLockMutex<I2C<I2C0>>,
+pub struct I2CWrapper {
+    i2c: I2cController,
 }
 
-impl<'a> I2CWrapper<'a> {
-    fn new(i2c: &'a SpinLockMutex<I2C<I2C0>>) -> Self {
+impl I2CWrapper {
+    fn new(i2c: I2cController) -> Self {
         Self { i2c }
     }
 }
 
-impl<'a> Write for I2CWrapper<'a> {
+impl I2CWrite for I2CWrapper {
     type Error = Error;
 
     fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
-        self.i2c.lock(|x| x.write(addr, bytes))
+        self.i2c.write(addr, bytes)
     }
 }
 
-impl<'a> WriteRead for I2CWrapper<'a> {
+impl WriteRead for I2CWrapper {
     type Error = Error;
 
     fn write_read(&mut self, address: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
-        self.i2c.lock(|x| x.write_read(address, bytes, buffer))
+        self.i2c.write_read(address, bytes, buffer)
     }
 }
-*/
+

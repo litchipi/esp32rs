@@ -91,6 +91,9 @@ An algorithm is imported as a struct implementing the `trait Algo`, imported as 
 ### Blinky
 Simply blinks a LED
 
+### OledSimple
+Displays a message in the Oled Display embedded in the board Lora32 from Heltec.
+
 ## TODO
 ### General
 - Select program to launch based on Cargo.toml configuration
@@ -102,8 +105,12 @@ Simply blinks a LED
 - Validate that we get a second when delaying of CORE_HZ
 - Simplify LED pin pick process
 
+### OledSimple
+- Display image from PNG file (convert at compile time & embed in binary)
+- Upgrade dependencies to newer versions
+- Experiment with embedded-graphics library to create cool things
+
 ### Other projects
-- Oled display experimentation
 - Wifi experimentation
 - BLE experimentation
 - LoRa experimentation

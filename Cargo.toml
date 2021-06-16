@@ -22,3 +22,5 @@ ssd1306 = "0.3.1"
 embedded-graphics = "0.6.2"
 display-interface-i2c = "0.4.0"
 embedded-hal = "0.2.5"
+heapless = { version = "0.7.1", features = ["ufmt-impl"] }
+ufmt = "0.1.0"
