@@ -12,7 +12,13 @@ xtensa-lx-rt = "0.5.0"
 xtensa-lx = "0.3.0"
 panic-halt = "0.2.0"
 
-esp32-hal = "0.2.0"
+esp32-hal = { path = "./esp32-hal/" }
+#esp32-hal = "0.2.0"
 
 paste = "1.0.5"
-#mini_paste = "0.1.11"
+#ssd1306 = "0.5.2"
+ssd1306 = "0.3.1"
+#embedded-graphics = "0.7.1"
+embedded-graphics = "0.6.2"
+display-interface-i2c = "0.4.0"
+embedded-hal = "0.2.5"
