@@ -120,9 +120,13 @@ impl Algo for OledSimpleAlgo{
         watchdog0.disable();
         watchdog1.disable();
 
+        let pins = dp.GPIO.split();
         let i2c_t = I2C::new(
-            get_oled_i2c_instance(),
-            get_oled_i2c_pins(),
+            dp.I2C0, //get_oled_i2c_instance(),
+            i2c::Pins{ //get_oled_i2c_pins(),
+                sda: pins.gpio15,
+                scl: pins.gpio4,
+            },
             400_000,
             &mut dport,
         );
@@ -130,7 +134,7 @@ impl Algo for OledSimpleAlgo{
 
 
         OledSimpleAlgo{
-            display : DisplayDriver::new(get_oled_i2c_rst(), i2cw),
+            display : DisplayDriver::new(pins.gpio16.into_push_pull_output(), i2cw),
             i: 0,
         }
     }
