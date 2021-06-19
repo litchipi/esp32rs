@@ -124,8 +124,8 @@ impl Algo for OledSimpleAlgo{
         let i2c_t = I2C::new(
             dp.I2C0, //get_oled_i2c_instance(),
             i2c::Pins{ //get_oled_i2c_pins(),
-                sda: pins.gpio15,
-                scl: pins.gpio4,
+                sda: pins.gpio4,
+                scl: pins.gpio15,
             },
             400_000,
             &mut dport,
