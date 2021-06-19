@@ -12,14 +12,15 @@ pub trait Algo{
     fn loop_fct(&mut self);
 }
 
-//TODO  Select based on configuration of Cargo.toml
 mod blinky;
 mod oled_simple;
+mod oled_logo;
 
 mod config;
 use config::WorkAlgo;
 
 /// Entry point - called by xtensa_lx6_rt after initialisation
+//TODO      Generate main function based on what algo to run -> build.rs
 #[entry]
 fn main() -> ! {
     let mut algo = WorkAlgo::init();

@@ -15,8 +15,10 @@ use esp32_hal::{
 use crate::blinky::BlinkyAlgo;
 #[allow(unused_imports)]
 use crate::oled_simple::OledSimpleAlgo;
+#[allow(unused_imports)]
+use crate::oled_logo::OledLogoAlgo;
 
-pub type WorkAlgo = OledSimpleAlgo;
+pub type WorkAlgo = OledLogoAlgo;
 
 
 
@@ -25,8 +27,9 @@ pub type BlinkyLedPin = Gpio2<Output<PushPull>>;
 
 
 
-/*      Oled Simple Algorithm           */
+/*      Oled Algorithms           */
 pub type OledI2cInstance = target::I2C0;
+pub type OledResetPin = Gpio16<Output<PushPull>>;
 
 #[macro_export]
 macro_rules! get_oled_pin {

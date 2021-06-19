@@ -43,15 +43,16 @@ use ufmt::uwrite;
 use crate::Algo;
 
 use crate::get_oled_pin;
-use crate::config::{OledI2cInstance, OledResetPin};
+use crate::config::{OledResetPin, OledI2cInstance};
+use crate::oled_simple::I2CWrapper;
+
+use embedded_graphics::image::{Image, ImageRaw};
 
 type OledDisplay = ssd1306::mode::GraphicsMode<I2cInterface<I2CWrapper>>;
-type I2cController = I2C<OledI2cInstance>;
-
-const TEXT_LINE_SIZE: usize = 15;
 
 pub struct DisplayDriver {
     pub display: OledDisplay,
+    pub data: ImageRaw<'static, BinaryColor>,
 }
 
 impl DisplayDriver{
@@ -67,28 +68,63 @@ impl DisplayDriver{
                 display.flush().unwrap();
                 display
             },
-      //      rst_pin
+            //TODO  Convert png image to raw at compile time
+            data: ImageRaw::new(include_bytes!("../data/images/rust.raw"), 64, 64),
         }
     }
 
-    pub fn draw_text(&mut self, text: String<TEXT_LINE_SIZE>, x: i32, y: i32) {
-        Text::new(text.as_str(), Point::new(x, y))
-            .into_styled(TextStyle::new(Font8x16, BinaryColor::On))
-            .draw(&mut self.display)
-            .unwrap();
+    //TODO  Try to change the color -> Does this screen support it ?
+    pub fn draw_logo(&mut self, _color: [u8;3]) {
+        let im = Image::new(&self.data, Point::new(32, 0));
+        im.draw(&mut self.display).unwrap();
         self.display.flush().unwrap();
     }
 }
 
+#[derive(Clone)]
+pub struct Color { 
+    rgb: [u8;3],
 
-
-
-pub struct OledSimpleAlgo{
-    i: usize,
-    display: DisplayDriver,
+    mode: [u8;3],
 }
 
-impl Algo for OledSimpleAlgo{
+impl Color {
+    pub fn new() -> Color{
+        Color {
+            rgb: [0, 0, 255],
+            mode: [0, 1, 2],        // 0 : Nothing, 1: Increase, 2: Decrease
+        }
+    }
+
+    pub fn next(&mut self) -> [u8;3] {
+        for col in 0..self.rgb.len(){
+            if self.mode[col] == 0{
+                continue;
+            } else if self.mode[col] == 1{
+                self.rgb[col] += 1;
+                if self.rgb[col] == 255{
+                    self.mode[col] += 1;
+                    self.mode[(col+1)%3] = 0;
+                }
+            } else if self.mode[col] == 2{
+                self.rgb[col] -= 1;
+                if self.rgb[col] == 0{
+                    self.mode[col] = 0;
+                    self.mode[(col+1)%3] = 1;
+                }
+            }
+        }
+
+        self.rgb
+    }
+}
+
+pub struct OledLogoAlgo{
+    display: DisplayDriver,
+    color: Color,
+}
+
+impl Algo for OledLogoAlgo{
     fn init() -> Self where Self: Sized{
         let dp = Peripherals::take().unwrap();
         let (mut dport, dport_clock_control) = dp.DPORT.split();
@@ -131,49 +167,16 @@ impl Algo for OledSimpleAlgo{
         let i2cw = I2CWrapper::new(i2c_t);
 
 
-        OledSimpleAlgo{
+        OledLogoAlgo{
             display : DisplayDriver::new(get_oled_pin!(i2c_rst, pins).into_push_pull_output(), i2cw),
-            i: 0,
+            color: Color::new(),
         }
     }
 
     fn loop_fct(&mut self) {
-        if self.i > 9999 {
-            panic!("too large number");
-        }
-
-        let mut text: String<TEXT_LINE_SIZE> = String::new();
-        uwrite!(text, "Hello rust {}", self.i).unwrap();
-        self.display.draw_text(text, 2, 28);
-        self.i += 1;
+        let col = self.color.next();
+        self.display.display.clear();
+        self.display.draw_logo(col);
         sleep(1.s());
-        self.display.display.clear()
     }
 }
-
-pub struct I2CWrapper {
-    i2c: I2cController,
-}
-
-impl I2CWrapper {
-    pub fn new(i2c: I2cController) -> Self {
-        Self { i2c }
-    }
-}
-
-impl I2CWrite for I2CWrapper {
-    type Error = Error;
-
-    fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
-        self.i2c.write(addr, bytes)
-    }
-}
-
-impl WriteRead for I2CWrapper {
-    type Error = Error;
-
-    fn write_read(&mut self, address: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
-        self.i2c.write_read(address, bytes, buffer)
-    }
-}
-
