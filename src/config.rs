@@ -1,4 +1,11 @@
 use esp32_hal::{
+    clock_control::{self, sleep, CPUSource, ClockControl},
+    dport::Split,
+    i2c::{Pins, Error, I2C},
+    prelude::*,
+    target::Peripherals,
+    timer::Timer,
+    gpio::*,
     target,
     gpio::*,
     i2c::*,
@@ -13,26 +20,21 @@ use crate::oled_simple::OledSimpleAlgo;
 
 pub type WorkAlgo = OledSimpleAlgo;
 
+
+
+
 /*      Oled Simple Algorithm           */
 type OledRstPin = Gpio16<Output<PushPull>>;
-pub fn get_oled_i2c_rst() -> OledRstPin{
-    let pins = target::Peripherals::take().unwrap().GPIO.split();
-    pins.gpio16.into_push_pull_output()
-}
-
 pub type OledI2cInstance = target::I2C0;
-pub fn get_oled_i2c_instance() -> OledI2cInstance{
-    target::Peripherals::take().unwrap().I2C0
+
+#[macro_export]
+macro_rules! get_oled_pin {
+    [ i2c_rst, $pins:expr ] => { $pins.gpio16 };
+    [ i2c_inst, $dp:expr ] => { $dp.I2C0 };
+    [ i2c_pins, $pins:expr ] => { 
+        Pins {
+            sda: $pins.gpio4,
+            scl: $pins.gpio15,
+        }
+    };
 }
-
-type OledI2cPins = Pins<Gpio15<Unknown>, Gpio4<Unknown>>;
-pub fn get_oled_i2c_pins() -> OledI2cPins{
-    let pins = target::Peripherals::take().unwrap().GPIO.split();
-    Pins {
-        sda: pins.gpio15,
-        scl: pins.gpio4,
-    }
-}
-
-
-

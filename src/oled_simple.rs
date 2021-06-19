@@ -27,7 +27,7 @@ use embedded_hal::blocking::i2c::{Write as I2CWrite, WriteRead};
 use esp32_hal::{
     clock_control::{self, sleep, CPUSource, ClockControl},
     dport::Split,
-    i2c::{self, Error, I2C},
+    i2c::{Pins, Error, I2C},
     prelude::*,
     target::Peripherals,
     timer::Timer,
@@ -41,7 +41,10 @@ use heapless::String;
 use ufmt::uwrite;
 
 use crate::Algo;
-use crate::config::{OledI2cInstance, get_oled_i2c_rst, get_oled_i2c_instance, get_oled_i2c_pins};
+
+#[macro_use]
+use crate::get_oled_pin;
+use crate::config::OledI2cInstance;
 
 type OledDisplay = ssd1306::mode::GraphicsMode<I2cInterface<I2CWrapper>>;
 type OledResetPin = Gpio16<Output<PushPull>>;
@@ -122,11 +125,8 @@ impl Algo for OledSimpleAlgo{
 
         let pins = dp.GPIO.split();
         let i2c_t = I2C::new(
-            dp.I2C0, //get_oled_i2c_instance(),
-            i2c::Pins{ //get_oled_i2c_pins(),
-                sda: pins.gpio4,
-                scl: pins.gpio15,
-            },
+            get_oled_pin!(i2c_inst, dp),
+            get_oled_pin!(i2c_pins, pins),
             400_000,
             &mut dport,
         );
@@ -134,7 +134,7 @@ impl Algo for OledSimpleAlgo{
 
 
         OledSimpleAlgo{
-            display : DisplayDriver::new(pins.gpio16.into_push_pull_output(), i2cw),
+            display : DisplayDriver::new(get_oled_pin!(i2c_rst, pins).into_push_pull_output(), i2cw),
             i: 0,
         }
     }
