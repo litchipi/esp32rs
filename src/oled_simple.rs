@@ -27,9 +27,9 @@ use embedded_hal::blocking::i2c::{Write as I2CWrite, WriteRead};
 use esp32_hal::{
     clock_control::{self, sleep, CPUSource, ClockControl},
     dport::Split,
-    i2c::{self, Error, I2C},
+    i2c::{Pins, Error, I2C},
     prelude::*,
-    target::{I2C0, Peripherals},
+    target::Peripherals,
     timer::Timer,
     gpio::*,
 };
@@ -42,21 +42,17 @@ use ufmt::uwrite;
 
 use crate::Algo;
 
-
-
+use crate::get_oled_pin;
+use crate::config::OledI2cInstance;
 
 type OledDisplay = ssd1306::mode::GraphicsMode<I2cInterface<I2CWrapper>>;
 type OledResetPin = Gpio16<Output<PushPull>>;
-type I2cController = I2C<I2C0>;
+type I2cController = I2C<OledI2cInstance>;
 
 const TEXT_LINE_SIZE: usize = 15;
 
-
-
-
 pub struct DisplayDriver {
     display: OledDisplay,
-    //rst_pin: OledResetPin,
 }
 
 impl DisplayDriver{
@@ -96,7 +92,6 @@ pub struct OledSimpleAlgo{
 impl Algo for OledSimpleAlgo{
     fn init() -> Self where Self: Sized{
         let dp = Peripherals::take().unwrap();
-
         let (mut dport, dport_clock_control) = dp.DPORT.split();
 
         // setup clocks & watchdog
@@ -128,19 +123,17 @@ impl Algo for OledSimpleAlgo{
         watchdog1.disable();
 
         let pins = dp.GPIO.split();
-        let i2c0 = i2c::I2C::new(
-            dp.I2C0,
-            i2c::Pins {
-                sda: pins.gpio4,
-                scl: pins.gpio15,
-            },
+        let i2c_t = I2C::new(
+            get_oled_pin!(i2c_inst, dp),
+            get_oled_pin!(i2c_pins, pins),
             400_000,
             &mut dport,
         );
-        let i2cw = I2CWrapper::new(i2c0);
+        let i2cw = I2CWrapper::new(i2c_t);
+
 
         OledSimpleAlgo{
-            display : DisplayDriver::new(pins.gpio16.into_push_pull_output(), i2cw),
+            display : DisplayDriver::new(get_oled_pin!(i2c_rst, pins).into_push_pull_output(), i2cw),
             i: 0,
         }
     }

@@ -1,17 +1,18 @@
 use esp32_hal::target;
 use esp32_hal::prelude::*;
 use esp32_hal::gpio::*;
-use xtensa_lx::timer::delay;
+use esp32_hal::clock_control::sleep;
 
-use crate::{CORE_HZ, Algo};
+use crate::Algo;
+use crate::config::BlinkyLedPin;
 
 pub struct BlinkyAlgo{
-    led: Gpio2<Output<PushPull>>,
+    led: BlinkyLedPin,
 }
 
 impl Algo for BlinkyAlgo{
     fn init() -> Self where Self: Sized{
-        let dp = target::Peripherals::take().expect("Failed to obtain Peripherals");
+        let dp = target::Peripherals::take().unwrap();
         let pins = dp.GPIO.split();
 
         BlinkyAlgo{
@@ -21,8 +22,8 @@ impl Algo for BlinkyAlgo{
 
     fn loop_fct(&mut self){
         self.led.set_high().unwrap();
-        delay(CORE_HZ);
+        sleep(1.s());
         self.led.set_low().unwrap();
-        delay(CORE_HZ);
+        sleep(1.s());
     }
 }
