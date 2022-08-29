@@ -11,11 +11,12 @@ git clone https://github.com/MabezDev/rust-xtensa
 ./configure --experimental-targets=Xtensa
 ./x.py build --stage 2
 ```
-Note:	Will take a LOT of time
-Note:	I recomment to turn off ninja in config.toml `ninja = false`
+> Note:	Will take a LOT of time
+
+> I recomment to turn off ninja in config.toml `ninja = false`
 
 #### Download the toolchain from Espressif ([Link](https://github.com/espressif/crosstool-NG/releases))
-WARNING:	Take the esp32 one, not esp32s3 one
+**WARNING**:	Take the esp32 one, not esp32s3 one
 ```bash
 mkdir ./esp32_toolchain/
 tar -xzf ~/Downloads/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz -C ./esp32_toolchain/
